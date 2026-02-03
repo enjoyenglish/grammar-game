@@ -10,32 +10,45 @@
         :root { --primary: #ff6b6b; --secondary: #4ecdc4; --bg: #f8f9fa; --accent: #ffe66d; --gold: #ffd700; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         .container { background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 95%; max-width: 750px; text-align: center; }
-        #score-board { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .score-val { font-size: 2rem; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .rank-badge { background: var(--gold); color: #333; padding: 5px 15px; border-radius: 50px; font-weight: bold; font-size: 0.9rem; border: 2px solid white; }
-        .drop-zone { min-height: 110px; margin: 15px 0; padding: 15px; background: #fff; border: 3px dashed var(--secondary); border-radius: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; position: relative; transition: 0.3s; }
+        
+        /* スコアボード */
+        #score-board { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-around; align-items: center; }
+        .score-val { font-size: 2rem; font-weight: bold; }
+        .rank-badge { background: var(--gold); color: #333; padding: 5px 15px; border-radius: 50px; font-weight: bold; border: 2px solid white; }
+
+        /* 文法選択エリア（ここが確実に動くように修正しました） */
+        .grammar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 20px 0; }
+        .grammar-item { 
+            display: flex; align-items: center; justify-content: center; padding: 15px; 
+            background: #f1f3f5; border-radius: 15px; cursor: pointer; border: 3px solid #dee2e6;
+            font-weight: bold; transition: 0.2s; user-select: none;
+        }
+        .grammar-item input { margin-right: 10px; transform: scale(1.3); pointer-events: none; } /* input自体のクリックは無効化してlabel全体で反応させる */
+        .grammar-item.selected { background: var(--secondary); color: white; border-color: #3baea5; box-shadow: 0 4px 10px rgba(78,205,196,0.3); }
+
+        /* 構築エリア */
+        .drop-zone { min-height: 110px; margin: 15px 0; padding: 15px; background: #fff; border: 3px dashed var(--secondary); border-radius: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; position: relative; }
         .drop-zone:empty::before { content: "ここにピリオドも含めて並べてね"; color: #bbb; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .hand-zone { min-height: 110px; margin: 10px 0; padding: 15px; background: #eaeff2; border-radius: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        .word-card { background: white; border: 2px solid #ddd; padding: 12px 20px; border-radius: 12px; cursor: grab; font-weight: bold; font-size: 1.2rem; box-shadow: 0 4px 0 #ddd; transition: 0.2s; }
+        
+        .word-card { background: white; border: 2px solid #ddd; padding: 12px 20px; border-radius: 12px; cursor: grab; font-weight: bold; font-size: 1.2rem; box-shadow: 0 4px 0 #ddd; }
         .word-card.period { background: #eee; color: var(--primary); }
-        .btn { padding: 16px 50px; font-size: 1.3rem; border: none; border-radius: 50px; cursor: pointer; background: var(--primary); color: white; box-shadow: 0 6px 0 #c44; font-weight: bold; transition: 0.2s; }
+
+        .btn { padding: 16px 50px; font-size: 1.3rem; border: none; border-radius: 50px; cursor: pointer; background: var(--primary); color: white; box-shadow: 0 6px 0 #c44; font-weight: bold; margin-top: 10px; }
+        
         #explanation-box { display: none; margin-top: 20px; padding: 20px; border-radius: 15px; background: #e7f5ff; border-left: 10px solid var(--secondary); text-align: left; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .notice { font-size: 0.85rem; color: #e63946; font-weight: bold; margin-bottom: 10px; }
-        .grammar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 20px 0; }
-        .grammar-grid label { padding: 12px; background: #f1f3f5; border-radius: 12px; cursor: pointer; border: 2px solid transparent; font-weight: bold; }
-        .grammar-grid label:has(input:checked) { background: var(--secondary); border-color: #3baea5; color: white; }
-        .grammar-grid input { display: none; }
         #game-screen { display: none; }
+        .notice { font-size: 0.85rem; color: #e63946; font-weight: bold; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div id="setup-screen" class="container">
     <h1 style="color:var(--primary)">🇬🇧 文法構築クエスト</h1>
-    <p>強化したい文法をセレクトしよう！</p>
+    <p>挑戦する文法を選ぼう！（複数選択OK）</p>
     <div class="grammar-grid" id="grid"></div>
-    <button class="btn" onclick="startGame()">クエスト開始！</button>
+    <button class="btn" onclick="startGame()">冒険開始！</button>
 </div>
 
 <div id="game-screen" class="container">
@@ -46,9 +59,12 @@
     <div class="notice">⚠️ 文頭も小文字です。ピリオド「 . 」や「 ? 」も最後に並べてね！</div>
     <p id="q-count" style="color:#888; margin:0;"></p>
     <p id="ja-text" style="font-size: 1.4rem; font-weight: bold; margin: 15px 0; color: #2d3436;"></p>
+    
     <div class="drop-zone" id="drop-zone"></div>
     <div class="hand-zone" id="hand-zone"></div>
+    
     <button class="btn" id="action-btn" onclick="check()">判定！</button>
+    
     <div id="explanation-box">
         <h3 style="margin-top:0; color:#0b7285;">💡 解説コーナー</h3>
         <p id="exp-grammar" style="font-weight:bold; margin-bottom:5px;"></p>
@@ -63,20 +79,20 @@ const data = {
     passive: { name: "受け身", q: [
         {ja:"この手紙は健によって書かれました。", en:["this", "letter", "was", "written", "by", "ken", "."], exp:"【be動詞＋過去分詞】で「～される」という意味。過去形なのでwasを使います。"},
         {ja:"英語は多くの国で話されています。", en:["english", "is", "spoken", "in", "many", "countries", "."], exp:"speakの過去分詞はspoken。現在の習慣なのでisを使います。"},
-        {ja:"その寺は約100年前に建てられました。", en:["the", "temple", "was", "built", "about", "100", "years", "ago", "."], exp:"build（建てる）の過去分詞はbuilt。不規則変化に注意！"},
+        {ja:"その寺は約100年前に建てられました。", en:["the", "temple", "was", "built", "about", "100", "years", "ago", "."], exp:"build（建てる）の過去分詞はbuilt。"},
         {ja:"このケーキは母によって作られました。", en:["this", "cake", "was", "made", "by", "my", "mother", "."], exp:"by 〇〇で「〇〇によって」を表します。"},
         {ja:"その猫はみんなに愛されています。", en:["the", "cat", "is", "loved", "by", "everyone", "."], exp:"loveは規則動詞なので過去分詞も-edをつけるだけです。"}
     ]},
     perfect: { name: "完了形", q: [
         {ja:"私は3年間ずっとテニスをしています。", en:["i", "have", "played", "tennis", "for", "three", "years", "."], exp:"【have＋過去分詞】。期間を表すfor（～の間）をセットで使います。"},
-        {ja:"あなたはもう宿題を終えましたか？", en:["have", "you", "finished", "your", "homework", "yet", "?"], exp:"疑問文ではyet（もう）を文末に置きます。語順はhaveが先頭です。"},
-        {ja:"私は一度も北海道へ行ったことがありません。", en:["i", "have", "never", "been", "to", "hokkaido", "."], exp:"「行ったことがある」はbeen to。一度もない場合はhaveの後にneverを置きます。"},
-        {ja:"彼はちょうど駅に着いたところです。", en:["he", "has", "just", "arrived", "at", "the", "station", "."], exp:"「ちょうど～したところ」はjustを使います。heが主語なのでhasになります。"},
+        {ja:"あなたはもう宿題を終えましたか？", en:["have", "you", "finished", "your", "homework", "yet", "?"], exp:"疑問文ではyet（もう）を文末に置きます。"},
+        {ja:"私は一度も北海道へ行ったことがありません。", en:["i", "have", "never", "been", "to", "hokkaido", "."], exp:"「行ったことがある」はbeen to。一度もない場合はneverを置きます。"},
+        {ja:"彼はちょうど駅に着いたところです。", en:["he", "has", "just", "arrived", "at", "the", "station", "."], exp:"「ちょうど～したところ」はjustを使います。"},
         {ja:"私たちは子供の頃から友達です。", en:["we", "have", "been", "friends", "since", "we", "were", "children", "."], exp:"「～以来ずっと」はsinceを使います。"}
     ]},
     post: { name: "後置修飾", q: [
         {ja:"向こうで歌っている女の子は花子です。", en:["the", "girl", "singing", "over", "there", "is", "hanako", "."], exp:"singing over there（あそこで歌っている）という塊がgirlを後ろから修飾します。"},
-        {ja:"これは日本で作られた車です。", en:["this", "is", "a", "car", "made", "in", "japan", "."], exp:"過去分詞madeがcarを後ろから説明しています。「～された名詞」の形です。"},
+        {ja:"これは日本で作られた車です。", en:["this", "is", "a", "car", "made", "in", "japan", "."], exp:"過去分詞madeがcarを後ろから説明しています。"},
         {ja:"私は彼によって書かれた本を読みました。", en:["i", "read", "a", "book", "written", "by", "him", "."], exp:"written by him（彼に書かれた）がbookを修飾しています。"},
         {ja:"ピアノを弾いている少年を知っていますか？", en:["do", "you", "know", "the", "boy", "playing", "the", "piano", "?"], exp:"現在分詞playingがboyを修飾します。"},
         {ja:"あそこで走っている犬を見て。", en:["look", "at", "the", "dog", "running", "there", "."], exp:"running there（あそこで走っている）がdogを修飾します。"}
@@ -85,42 +101,158 @@ const data = {
         {ja:"これは私が昨日買ったカメラです。", en:["this", "is", "the", "camera", "that", "i", "bought", "yesterday", "."], exp:"先行詞cameraをthat以下の文が説明しています。"},
         {ja:"私は親切な心を持つ少年を知っています。", en:["i", "know", "a", "boy", "who", "has", "a", "kind", "heart", "."], exp:"人を先行詞にする時はwhoを使います。"},
         {ja:"あなたが探している鍵はここにあります。", en:["the", "key", "which", "you", "are", "looking", "for", "is", "here", "."], exp:"物(key)を修飾する時はwhichやthatを使います。"},
-        {ja:"あそこに立っている男性は私の父です。", en:["the", "man", "who", "is", "standing", "there", "is", "my", "father", "."], exp:"主格のwho。whoが文の中で主語の役割をしています。"},
+        {ja:"あそこに立っている男性は私の父です。", en:["the", "man", "who", "is", "standing", "there", "is", "my", "father", "."], exp:"主語の役割をするwho（主格）です。"},
         {ja:"これは多くの写真がある本です。", en:["this", "is", "a", "book", "which", "has", "many", "pictures", "."], exp:"「多くの写真を持っている本」という構造です。"}
+    ]},
+    indirect: { name: "間接疑問文", q: [
+        {ja:"彼がどこに住んでいるか知っていますか？", en:["do", "you", "know", "where", "he", "lives", "?"], exp:"疑問詞(where)の後は「主語＋動詞」の語順に戻ります。livesのsを忘れずに！"},
+        {ja:"彼女が何と言ったか教えてください。", en:["please", "tell", "me", "what", "she", "said", "."], exp:"what she said（彼女が言ったこと）の語順がポイントです。"},
+        {ja:"私はその時、何時か分かりませんでした。", en:["i", "did", "not", "know", "what", "time", "it", "was", "then", "."], exp:"what timeの後にit wasという肯定文の語順を続けます。"},
+        {ja:"彼が誰なのか私は知りません。", en:["i", "don't", "know", "who", "he", "is", "."], exp:"who is he? ではなく who he is になります。"},
+        {ja:"いつ会議が始まるか知っていますか？", en:["do", "you", "know", "when", "the", "meeting", "will", "start", "?"], exp:"whenの後は主語(the meeting)＋動詞です。"}
+    ]},
+    if: { name: "仮定法", q: [
+        {ja:"もし私があなたなら、そこへ行くだろうに。", en:["if", "i", "were", "you", ",", "i", "would", "go", "there", "."], exp:"現在の事実と違うことを言う仮定法。be動詞にwere、助動詞にwouldを使います。"},
+        {ja:"もっと時間があればいいのになあ。", en:["i", "wish", "i", "had", "more", "time", "."], exp:"I wish ＋ 過去形 で「～ならいいのに」という願望を表します。"},
+        {ja:"もし鳥なら、あなたのところへ飛んでいくのに。", en:["if", "i", "were", "a", "bird", ",", "i", "would", "fly", "to", "you", "."], exp:"実現不可能な想像も仮定法過去の形になります。"},
+        {ja:"もし明日晴れなら、私たちはピクニックに行きます。", en:["if", "it", "is", "sunny", "tomorrow", ",", "we", "will", "go", "on", "a", "picnic", "."], exp:"これは単純な「条件」の文なので現在形isを使います。"},
+        {ja:"もしお金があれば、その車を買えるのに。", en:["if", "i", "had", "enough", "money", ",", "i", "could", "buy", "the", "car", "."], exp:"事実と反する仮定なのでhadとcouldを使います。"}
+    ]},
+    verb_pattern: { name: "使役・命令", q: [
+        {ja:"母は私に部屋を掃除するように言いました。", en:["my", "mother", "told", "me", "to", "clean", "my", "room", "."], exp:"tell ＋ 人 ＋ to ～で「人に～するように言う」です。"},
+        {ja:"彼は私に彼の車を使わせてくれました。", en:["he", "let", "me", "use", "his", "car", "."], exp:"let ＋ 人 ＋ 動詞の原形 で「人に～させる（許す）」です。"},
+        {ja:"私はあなたに手伝ってほしいです。", en:["i", "want", "you", "to", "help", "me", "."], exp:"want ＋ 人 ＋ to ～で「人に～してほしい」です。"},
+        {ja:"先生は私たちに静かにするように頼みました。", en:["the", "teacher", "asked", "us", "to", "be", "quiet", "."], exp:"ask ＋ 人 ＋ to ～で「人に～するように頼む」です。"},
+        {ja:"父は私を一人で行かせてくれませんでした。", en:["my", "father", "didn't", "let", "me", "go", "alone", "."], exp:"letの後の動詞は原形になります。"}
     ]},
     ing: { name: "進行形", q: [
         {ja:"彼らは公園でサッカーをしています。", en:["they", "are", "playing", "soccer", "in", "the", "park", "."], exp:"【be動詞＋～ing】で現在進行形を表します。"},
-        {ja:"その時、私は夕食を食べていました。", en:["i", "was", "having", "dinner", "at", "that", "time", "."], exp:"過去のある時点で「～していた」は過去進行形を使います。"},
+        {ja:"その時、私は夕食を食べていました。", en:["i", "was", "having", "dinner", "at", "that", "time", "."], exp:"過去進行形【was/were ＋ ～ing】です。"},
         {ja:"彼女は今、ピアノの練習をしていますか？", en:["is", "she", "practicing", "the", "piano", "now", "?"], exp:"疑問文はbe動詞を前に出します。"},
-        {ja:"私たちはその時、走っていませんでした。", en:["we", "were", "not", "running", "at", "that", "time", "."], exp:"進行形の否定文はbe動詞の後にnotを置きます。"},
-        {ja:"何を探しているのですか？", en:["what", "are", "you", "looking", "for", "?"], exp:"疑問詞(what)の後に疑問文の語順を続けます。"}
+        {ja:"私たちはその時、走っていませんでした。", en:["we", "were", "not", "running", "at", "that", "time", "."], exp:"否定文はbe動詞の後にnotを置きます。"},
+        {ja:"何を探しているのですか？", en:["what", "are", "you", "looking", "for", "?"], exp:"疑問詞(what)の後に進行形の疑問文を続けます。"}
     ]},
     inf_ger: { name: "不定詞・動名詞", q: [
-        {ja:"私はテレビを見るのをやめました。", en:["i", "stopped", "watching", "tv", "."], exp:"stopは「～すること」を言う時に動名詞(~ing)を使います。"},
+        {ja:"私はテレビを見るのをやめました。", en:["i", "stopped", "watching", "tv", "."], exp:"stopは後ろに動名詞(~ing)を置きます。"},
         {ja:"彼は医者になることを決めました。", en:["he", "decided", "to", "be", "a", "doctor", "."], exp:"decideは後ろに不定詞(to＋動詞の原形)を置きます。"},
         {ja:"私は将来、海外に行きたいです。", en:["i", "want", "to", "go", "abroad", "in", "the", "future", "."], exp:"want to ～で「～したい」です。"},
         {ja:"彼女は本を読むことが好きです。", en:["she", "enjoys", "reading", "books", "."], exp:"enjoyの後ろは動名詞(~ing)です。"},
-        {ja:"私の夢は世界中を旅行することです。", en:["my", "dream", "is", "to", "travel", "around", "the", "world", "."], exp:"「～すること」という名詞的用法です。"}
-    ]},
-    indirect: { name: "間接疑問文", q: [
-        {ja:"彼がどこに住んでいるか知っていますか？", en:["do", "you", "know", "where", "he", "lives", "?"], exp:"疑問詞(where)の後は「主語＋動詞」の語順に戻ります。"},
-        {ja:"彼女が何と言ったか教えてください。", en:["please", "tell", "me", "what", "she", "said", "."], exp:"what she saidの語順がポイントです。"},
-        {ja:"私はその時、何時か分かりませんでした。", en:["i", "did", "not", "know", "what", "time", "it", "was", "then", "."], exp:"what timeの後にit wasという肯定文の語順を続けます。"},
-        {ja:"彼が誰なのか私は知りません。", en:["i", "don't", "know", "who", "he", "is", "."], exp:"who is he? ではなく who he is になります。"},
-        {ja:"いつ会議が始まるか知っていますか？", en:["do", "you", "know", "when", "the", "meeting", "will", "start", "?"], exp:"whenの後は主語(the meeting)＋動詞(will start)です。"}
+        {ja:"私の夢は世界中を旅行することです。", en:["my", "dream", "is", "to", "travel", "around", "the", "world", "."], exp:"不定詞の名詞的用法です。"}
     ]},
     comp: { name: "比較", q: [
         {ja:"この本はあの本より面白いです。", en:["this", "book", "is", "more", "interesting", "than", "that", "one", "."], exp:"長い単語はmore ～ thanを使って比較します。"},
-        {ja:"健はクラスで一番背が高いです。", en:["ken", "is", "the", "tallest", "in", "his", "class", "."], exp:"「一番～」はthe ＋ -estを使います。"},
+        {ja:"健はクラスで一番背が高いです。", en:["ken", "is", "the", "tallest", "in", "his", "class", "."], exp:"「一番～」はthe ＋ 最上級(-est)を使います。"},
         {ja:"私はあなたと同じくらい忙しいです。", en:["i", "am", "as", "busy", "as", "you", "."], exp:"「同じくらい～」はas ～ asで挟みます。"},
-        {ja:"この車はあの車より速く走ります。", en:["this", "car", "runs", "faster", "than", "that", "one", "."], exp:"fastのように短い副詞は後ろに-erをつけます。"},
-        {ja:"世界で一番高い山は何ですか？", en:["what", "is", "the", "highest", "mountain", "in", "the", "world", "?"], exp:"最上級の前には必ずtheをつけます。"}
+        {ja:"この車はあの車より速く走ります。", en:["this", "car", "runs", "faster", "than", "that", "one", "."], exp:"副詞fastの比較級はfasterです。"},
+        {ja:"世界で一番高い山は何ですか？", en:["what", "is", "the", "highest", "mountain", "in", "the", "world", "?"], exp:"最上級の前にはtheを忘れずに。"}
     ]},
     aux: { name: "助動詞", q: [
         {ja:"ここで写真を撮ってもいいですよ。", en:["you", "may", "take", "pictures", "here", "."], exp:"mayは「～してもよい」という許可を表します。"},
-        {ja:"あなたは一生懸命勉強しなければなりません。", en:["you", "must", "study", "hard", "."], exp:"mustは「～しなければならない」という強い義務です。"},
-        {ja:"窓を開けてくれませんか？", en:["will", "you", "open", "the", "window", "?"], exp:"Will you ～? で「～してくれませんか？」という依頼になります。"},
+        {ja:"あなたは一生懸命勉強しなければなりません。", en:["you", "must", "study", "hard", "."], exp:"mustは「～しなければならない」という義務です。"},
+        {ja:"窓を開けてくれませんか？", en:["will", "you", "open", "the", "window", "?"], exp:"Will you ～? で「～してくれませんか？」という依頼です。"},
         {ja:"私は英語を上手に話すことができます。", en:["i", "can", "speak", "english", "well", "."], exp:"助動詞の後は必ず「動詞の原形」です。"},
         {ja:"あなたは明日、そこへ行く必要はありません。", en:["you", "don't", "have", "to", "go", "there", "tomorrow", "."], exp:"don't have toで「～する必要はない」です。"}
-    ]},
-    if: { name: "仮定法", q
+    ]}
+};
+
+let score = 0;
+const ranks = [
+    {min: 0, label: "BEGINNER"},
+    {min: 500, label: "ROOKIE"},
+    {min: 1000, label: "PRO"},
+    {min: 3000, label: "MASTER"},
+    {min: 5000, label: "LEGEND"}
+];
+
+const grid = document.getElementById('grid');
+Object.keys(data).forEach(key => {
+    const item = document.createElement('div');
+    item.className = 'grammar-item';
+    item.innerHTML = `<input type="checkbox" value="${key}"> <span>${data[key].name}</span>`;
+    
+    // label全体のクリックで反応させる
+    item.addEventListener('click', () => {
+        const cb = item.querySelector('input');
+        cb.checked = !cb.checked;
+        item.classList.toggle('selected', cb.checked);
+    });
+    grid.appendChild(item);
+});
+
+let currentQuestions = [], qIndex = 0;
+
+function startGame() {
+    const checkboxes = document.querySelectorAll('#grid input:checked');
+    if(!checkboxes.length) return alert("文法を選んでね！");
+    
+    currentQuestions = [];
+    checkboxes.forEach(cb => {
+        data[cb.value].q.forEach(q => currentQuestions.push({...q, category: data[cb.value].name}));
+    });
+    currentQuestions.sort(() => Math.random() - 0.5);
+    qIndex = 0; score = 0; updateScore(0);
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    loadQuestion();
+}
+
+function updateScore(pts) {
+    score += pts;
+    document.getElementById('score').innerText = score;
+    const rankLabel = ranks.filter(r => score >= r.min).pop().label;
+    document.getElementById('rank').innerText = rankLabel;
+}
+
+function loadQuestion() {
+    const q = currentQuestions[qIndex];
+    document.getElementById('ja-text').innerText = q.ja;
+    document.getElementById('q-count').innerText = `Q. ${qIndex + 1} / ${currentQuestions.length}`;
+    document.getElementById('feedback').innerText = "";
+    document.getElementById('explanation-box').style.display = "none";
+    document.getElementById('action-btn').style.display = "inline-block";
+    
+    const hand = document.getElementById('hand-zone');
+    const drop = document.getElementById('drop-zone');
+    hand.innerHTML = ""; drop.innerHTML = "";
+    
+    [...q.en].sort(() => Math.random() - 0.5).forEach(w => {
+        const d = document.createElement('div');
+        d.className = 'word-card' + (w === "." || w === "?" || w === "," ? ' period' : '');
+        d.innerText = w;
+        hand.appendChild(d);
+    });
+}
+
+const sortOptions = { group: 'words', animation: 200 };
+new Sortable(document.getElementById('hand-zone'), sortOptions);
+new Sortable(document.getElementById('drop-zone'), sortOptions);
+
+function check() {
+    const user = Array.from(document.getElementById('drop-zone').children).map(c => c.innerText).join(" ");
+    const ans = currentQuestions[qIndex].en.join(" ");
+    
+    // カンマ等のスペース微調整
+    const format = s => s.replace(/ , /g, ", ").replace(/ \. /g, ". ").replace(/ \? /g, "? ").trim();
+
+    if(format(user) === format(ans)) {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        document.getElementById('feedback').innerHTML = "<span style='color:#fab005'>✨ 正解！ EXCELLENT! ✨</span>";
+        updateScore(100);
+        document.getElementById('action-btn').style.display = "none";
+        document.getElementById('explanation-box').style.display = "block";
+        document.getElementById('exp-grammar').innerText = `【テーマ：${currentQuestions[qIndex].category}】`;
+        document.getElementById('exp-text').innerText = currentQuestions[qIndex].exp;
+    } else {
+        document.getElementById('feedback').innerHTML = "<span style='color:#fa5252'>違うみたい...もう一度！</span>";
+        setTimeout(() => document.getElementById('feedback').innerText = "", 1200);
+    }
+}
+
+function next() {
+    qIndex++;
+    if(qIndex < currentQuestions.length) loadQuestion();
+    else { alert("🎉 クエストクリア！ スコア: " + score); location.reload(); }
+}
+</script>
+</body>
+</html>

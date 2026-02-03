@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中学英語・文法マスタークエスト</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #ff6b6b;
+            --secondary-color: #4ecdc4;
+            --bg-color: #f0f7f7;
+            --accent-color: #ffe66d;
+            --correct-color: #ff922b;
+        }
+
+        body {
+            font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 0 #cbdadb;
+            width: 95%;
+            max-width: 650px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        h1 { color: var(--primary-color); font-size: 1.4rem; margin-bottom: 10px; }
+
+        /* 文法選択 */
+        .grammar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .grammar-grid label {
+            display: block;
+            padding: 10px;
+            background: #eee;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .grammar-grid input { display: none; }
+        .grammar-grid input:checked + span {
+            color: white;
+        }
+        .grammar-grid label:has(input:checked) {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 0 #3baea5;
+        }
+
+        /* ゲーム画面 */
+        #game-screen { display: none; }
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            min-height: 80px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 3px dashed var(--secondary-color);
+            border-radius: 15px;
+        }
+
+        .word-card {
+            background: var(--accent-color);
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: grab;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 0 #d4c05d;
+            user-select: none;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 5px 0 #c44;
+            font-weight: bold;
+        }
+
+        .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #c44; }
+
+        #score-display { font-size: 1.2rem; font-weight: bold; color: #555; }
+        #feedback { margin-top: 15px; font-size: 1.2rem; font-weight: bold; min-height: 1.5em; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen" class="container">
+        <h1>🇬🇧 文法マスタークエスト</h1>
+        <p style="font-size: 0.9rem;">復習する文法を選んでね（複数OK！）</p>
+        <div class="grammar-grid">
+            <label><input type="checkbox" value="passive"><span>受け身</span></label>
+            <label><input type="checkbox" value="perfect"><span>完了形</span></label>
+            <label><input type="checkbox" value="post"><span>後置修飾</span></label>
+            <label><input type="checkbox" value="relative"><span>関係代名詞</span></label>
+            <label><input type="checkbox" value="ing"><span>進行形</span></label>
+            <label><input type="checkbox" value="inf_ger"><span>不定詞・動名詞</span></label>
+            <label><input type="checkbox" value="indirect"><span>間接疑問文</span></label>
+            <label><input type="checkbox" value="comp"><span>比較</span></label>
+            <label><input type="checkbox" value="aux"><span>助動詞</span></label>
+            <label><input type="checkbox" value="if"><span>仮定法</span></label>
+            <label><input type="checkbox" value="verb_pattern"><span>want 人 to / 使役</span></label>
+        </div>
+        <button class="btn" onclick="startGame()">冒険開始！</button>
+    </div>
+
+    <div id="game-screen" class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div id="score-display">Score: 0</div>
+            <div id="q-count" style="color: #888;"></div>
+        </div>
+        <hr>
+        <p id="japanese-text" style="font-size: 1.2rem; font-weight: bold; color: #333; margin: 20px 0;"></p>
+        <div id="sortable-list" class="word-list"></div>
+        <button class="btn" onclick="checkAnswer()">チェック！</button>
+        <div id="feedback"></div>
+    </div>
+
+    <script>
+        const questions = [
+            { cat: 'passive', ja: 'この手紙は英語で書かれました。', en: ['This', 'letter', 'was', 'written', 'in', 'English.'] },
+            { cat: 'perfect', ja: '私は一度も京都を訪れたことがありません。', en: ['I', 'have', 'never', 'visited', 'Kyoto.'] },
+            { cat: 'post', ja: 'あそこで走っている少年は健です。', en: ['The', 'boy', 'running', 'over', 'there', 'is', 'Ken.'] },
+            { cat: 'relative', ja: 'これは私が一番好きな本です。', en: ['This', 'is', 'the', 'book', 'that', 'I', 'like', 'the', 'best.'] },
+            { cat: 'ing', ja: '彼は今、お風呂で歌を歌っています。', en: ['He', 'is', 'singing', 'a', 'song', 'in', 'the', 'bath', 'now.'] },
+            { cat: 'inf_ger', ja: '私はテレビを見るのをやめました。', en: ['I', 'stopped', 'watching', 'TV.'] },
+            { cat: 'inf_ger', ja: '彼は医者になることを決めました。', en: ['He', 'decided', 'to', 'be', 'a', 'doctor.'] },
+            { cat: 'indirect', ja: '彼がどこに住んでいるか知っていますか？', en: ['Do', 'you', 'know', 'where', 'he', 'lives?'] },
+            { cat: 'comp', ja: 'この数学の問題は、あの問題より難しい。', en: ['This', 'math', 'problem', 'is', 'more', 'difficult', 'than', 'that', 'one.'] },
+            { cat: 'aux', ja: 'あなたはここで靴を脱がなければなりません。', en: ['You', 'must', 'take', 'off', 'your', 'shoes', 'here.'] },
+            { cat: 'if', ja: 'もし私が鳥なら、あなたのところへ飛んでいくのに。', en: ['If', 'I', 'were', 'a', 'bird,', 'I', 'would', 'fly', 'to', 'you.'] },
+            { cat: 'verb_pattern', ja: '母は私に部屋を掃除するように言いました。', en: ['My', 'mother', 'told', 'me', 'to', 'clean', 'my', 'room.'] },
+            { cat: 'verb_pattern', ja: '彼は私に彼の車を使わせてくれました。', en: ['He', 'let', 'me', 'use', 'his', 'car.'] }
+        ];
+
+        let currentQuestions = [], currentIndex = 0, totalScore = 0, attemptCount = 0;
+
+        function startGame() {
+            const selected = Array.from(document.querySelectorAll('.grammar-grid input:checked')).map(el => el.value);
+            if (selected.length === 0) return alert('文法を１つ以上選んでね！');
+
+            currentQuestions = questions.filter(q => selected.includes(q.cat)).sort(() => Math.random() - 0.5);
+            if (currentQuestions.length === 0) return alert('ごめんね、その文法の問題は準備中だよ！');
+
+            currentIndex = 0; totalScore = 0;
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            attemptCount = 1;
+            const q = currentQuestions[currentIndex];
+            document.getElementById('japanese-text').innerText = q.ja;
+            document.getElementById('feedback').innerText = "";
+            document.getElementById('q-count').innerText = `${currentIndex + 1} / ${currentQuestions.length}`;
+            
+            const list = document.getElementById('sortable-list');
+            list.innerHTML = "";
+            const shuffled = [...q.en].sort(() => Math.random() - 0.5);
+            shuffled.forEach(word => {
+                const div = document.createElement('div');
+                div.className = 'word-card';
+                div.innerText = word;
+                list.appendChild(div);
+            });
+            new Sortable(list, { animation: 150, ghostClass: 'blue-background-class' });
+        }
+
+        function checkAnswer() {
+            const userOrder = Array.from(document.getElementById('sortable-list').children).map(el => el.innerText);
+            const correctOrder = currentQuestions[currentIndex].en;
+
+            if (userOrder.join(' ') === correctOrder.join(' ')) {
+                let pts = attemptCount === 1 ? 100 : (attemptCount === 2 ? 50 : 10);
+                totalScore += pts;
+                document.getElementById('score-display').innerText = "Score: " + totalScore;
+                document.getElementById('feedback').innerHTML = `<span style="color:var(--correct-color)">正解！ +${pts}点</span>`;
+                
+                setTimeout(() => {
+                    currentIndex++;
+                    if (currentIndex < currentQuestions.length) {
+                        showQuestion();
+                    } else {
+                        alert(`冒険クリア！\n最終スコア: ${totalScore}点`);
+                        location.reload();
+                    }
+                }, 1200);
+            } else {
+                attemptCount++;
+                document.getElementById('feedback').innerHTML = `<span style="color:#888; font-size: 0.9rem;">おしい！並び替えてみてね（${attemptCount}回目）</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

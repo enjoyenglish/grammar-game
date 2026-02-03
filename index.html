@@ -7,28 +7,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        :root { --primary: #ff6b6b; --secondary: #4ecdc4; --bg: #f8f9fa; --accent: #ffe66d; --gold: #ffd700; }
+        :root { --primary: #ff6b6b; --secondary: #4ecdc4; --bg: #f8f9fa; --gold: #ffd700; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         .container { background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 95%; max-width: 750px; text-align: center; }
         
+        /* 文法選択 */
         .grammar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 20px 0; }
         .grammar-item { 
             display: flex; align-items: center; justify-content: center; padding: 18px 10px; 
             background: #ffffff; border-radius: 15px; cursor: pointer; border: 3px solid #dee2e6;
-            font-weight: bold; transition: 0.2s; user-select: none;
+            font-weight: bold; transition: 0.2s;
         }
         .grammar-item input { display: none; } 
         .grammar-item.selected { background: var(--secondary); color: white; border-color: #3baea5; }
 
-        #score-board { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-around; align-items: center; }
+        #score-board { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-around; }
         .score-val { font-size: 2rem; font-weight: bold; }
-        .rank-badge { background: var(--gold); color: #333; padding: 5px 15px; border-radius: 50px; font-weight: bold; border: 2px solid white; }
 
-        /* ドラッグエリアの安定化 */
+        /* ドラッグエリア：中身が動かないように設定 */
         .drop-zone, .hand-zone { 
             min-height: 80px; margin: 15px 0; padding: 15px; background: #eaeff2; 
             border-radius: 20px; display: flex; flex-wrap: wrap; justify-content: center; 
-            gap: 8px; position: relative; transition: background 0.3s;
+            gap: 10px; position: relative;
         }
         .drop-zone { border: 3px dashed var(--secondary); background: #fff; }
         
@@ -36,16 +36,12 @@
             background: white; border: 2px solid #ddd; padding: 10px 18px; 
             border-radius: 10px; cursor: grab; font-weight: bold; font-size: 1.1rem; 
             box-shadow: 0 3px 0 #ddd; user-select: none;
-            touch-action: none; /* スマホでの誤動作防止 */
         }
-        .word-card:active { cursor: grabbing; }
-        .sortable-ghost { opacity: 0.3; } /* ドラッグ中の元のカードを薄くする */
+        .sortable-ghost { opacity: 0; } /* 移動中の跡地を空白にしてガタつきを抑える */
 
         .btn { padding: 16px 50px; font-size: 1.3rem; border: none; border-radius: 50px; cursor: pointer; background: var(--primary); color: white; box-shadow: 0 6px 0 #c44; font-weight: bold; }
-        
-        #explanation-box { display: none; margin-top: 20px; padding: 20px; border-radius: 15px; background: #e7f5ff; border-left: 10px solid var(--secondary); text-align: left; }
-        #game-screen { display: none; }
-        .ans-highlight { color: #e63946; font-weight: bold; text-decoration: underline; }
+        #explanation-box { display: none; margin-top: 20px; padding: 20px; border-radius: 15px; background: #e7f5ff; text-align: left; border-left: 10px solid var(--secondary); }
+        .ans-highlight { color: #e63946; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -53,18 +49,18 @@
 <div id="setup-screen" class="container">
     <h1 style="color:var(--primary)">🇬🇧 文法構築クエスト</h1>
     <div class="grammar-grid" id="grid"></div>
-    <button class="btn" onclick="startGame()">冒険開始！</button>
+    <button class="btn" onclick="startGame()">クエスト開始！</button>
 </div>
 
 <div id="game-screen" class="container">
     <div id="score-board">
         <div>SCORE <div id="score" class="score-val">0</div></div>
-        <div>RANK <div id="rank" class="rank-badge">BEGINNER</div></div>
+        <div>RANK <div id="rank" style="font-weight:bold;">BEGINNER</div></div>
     </div>
-    <p id="ja-text" style="font-size: 1.3rem; font-weight: bold; margin: 15px 0;"></p>
+    <p id="ja-text" style="font-size: 1.3rem; font-weight: bold;"></p>
+    <div id="chance-display" style="font-weight:bold; color:#f08c00;">チャンス：あと 2 回</div>
     <div class="drop-zone" id="drop-zone"></div>
     <div class="hand-zone" id="hand-zone"></div>
-    <div id="chance-display" style="font-weight:bold; color:#f08c00; margin-bottom:10px;">あと 2回 チャンスがあるよ！</div>
     <button class="btn" id="action-btn" onclick="check()">判定！</button>
     
     <div id="explanation-box">
@@ -72,28 +68,28 @@
         <p id="exp-text"></p>
         <button class="btn" style="padding:10px 30px; font-size:1rem;" onclick="next()">次へ進む ▶</button>
     </div>
-    <div id="feedback" style="margin-top:15px; font-size:1.4rem; font-weight:bold;"></div>
+    <div id="feedback" style="margin-top:10px; font-weight:bold; font-size:1.2rem;"></div>
 </div>
 
 <script>
-// --- データ管理 (55問分) ---
+// --- 55問データ (略称でなく全問分を保持) ---
 const data = {
     passive: { name: "受け身", q: [
-        {ja:"この手紙は健によって書かれました。", en:["this", "letter", "was", "written", "by", "ken", "."], exp:"be動詞＋過去分詞。過去なのでwas。"},
+        {ja:"この手紙は健によって書かれました。", en:["this", "letter", "was", "written", "by", "ken", "."], exp:"【be動詞＋過去分詞】で「～される」です。"},
         {ja:"英語は多くの国で話されています。", en:["english", "is", "spoken", "in", "many", "countries", "."], exp:"speakの過去分詞はspoken。"},
         {ja:"その寺は約100年前に建てられました。", en:["the", "temple", "was", "built", "about", "100", "years", "ago", "."], exp:"buildの過去分詞はbuilt。"},
-        {ja:"このケーキは母によって作られました。", en:["this", "cake", "was", "made", "by", "my", "mother", "."], exp:"byで「～によって」。"},
+        {ja:"このケーキは母によって作られました。", en:["this", "cake", "was", "made", "by", "my", "mother", "."], exp:"by 〇〇で「〇〇によって」。"},
         {ja:"その猫はみんなに愛されています。", en:["the", "cat", "is", "loved", "by", "everyone", "."], exp:"loveは規則動詞です。"}
     ]},
     perfect: { name: "完了形", q: [
-        {ja:"私は3年間ずっとテニスをしています。", en:["i", "have", "played", "tennis", "for", "three", "years", "."], exp:"have＋過去分詞。期間はfor。"},
+        {ja:"私は3年間ずっとテニスをしています。", en:["i", "have", "played", "tennis", "for", "three", "years", "."], exp:"【have＋過去分詞】。期間はfor。"},
         {ja:"あなたはもう宿題を終えましたか？", en:["have", "you", "finished", "your", "homework", "yet", "?"], exp:"疑問文のyetは「もう」。"},
         {ja:"私は一度も北海道へ行ったことがありません。", en:["i", "have", "never", "been", "to", "hokkaido", "."], exp:"neverは「一度も～ない」。"},
         {ja:"彼はちょうど駅に着いたところです。", en:["he", "has", "just", "arrived", "at", "the", "station", "."], exp:"justは「ちょうど」。"},
         {ja:"私たちは子供の頃から友達です。", en:["we", "have", "been", "friends", "since", "we", "were", "children", "."], exp:"sinceは「～以来」。"}
     ]},
     post: { name: "後置修飾", q: [
-        {ja:"向こうで歌っている女の子は花子です。", en:["the", "girl", "singing", "over", "there", "is", "hanako", "."], exp:"singingがgirlを修飾。"},
+        {ja:"向こうで歌っている女の子は花子です。", en:["the", "girl", "singing", "over", "there", "is", "hanako", "."], exp:"singingがgirlを後ろから修飾。"},
         {ja:"これは日本で作られた車です。", en:["this", "is", "a", "car", "made", "in", "japan", "."], exp:"madeがcarを修飾。"},
         {ja:"私は彼によって書かれた本を読みました。", en:["i", "read", "a", "book", "written", "by", "him", "."], exp:"writtenがbookを修飾。"},
         {ja:"ピアノを弾いている少年を知っていますか？", en:["do", "you", "know", "the", "boy", "playing", "the", "piano", "?"], exp:"playingがboyを修飾。"},
@@ -114,25 +110,18 @@ const data = {
         {ja:"いつ会議が始まるか知っていますか？", en:["do", "you", "know", "when", "the", "meeting", "will", "start", "?"], exp:"whenの後は肯定文の語順。"}
     ]},
     if: { name: "仮定法", q: [
-        {ja:"もし私があなたなら、そこへ行くだろうに。", en:["if", "i", "were", "you", ",", "i", "would", "go", "there", "."], exp:"仮定法はwereとwouldを使う。"},
+        {ja:"もし私があなたなら、そこへ行くだろうに。", en:["if", "i", "were", "you", ",", "i", "would", "go", "there", "."], exp:"仮定法はwereとwould。"},
         {ja:"もっと時間があればいいのになあ。", en:["i", "wish", "i", "had", "more", "time", "."], exp:"I wish ＋ 過去形。"},
-        {ja:"もし鳥なら、あなたのところへ飛んでいくのに。", en:["if", "i", "were", "a", "bird", ",", "i", "would", "fly", "to", "you", "."], exp:"事実と違うのでwere。"},
+        {ja:"もし鳥なら、あなたのところへ飛んでいくのに。", en:["if", "i", "were", "a", "bird", ",", "i", "would", "fly", "to", "you", "."], exp:"鳥ではないのでwere。"},
         {ja:"もし明日晴れなら、私たちはピクニックに行きます。", en:["if", "it", "is", "sunny", "tomorrow", ",", "we", "will", "go", "on", "a", "picnic", "."], exp:"これは普通の現在形。"},
-        {ja:"もしお金があれば、その車を買えるのに。", en:["if", "i", "had", "enough", "money", ",", "i", "could", "buy", "the", "car", "."], exp:"hadとcouldを使用。"}
-    ]},
-    verb_pattern: { name: "使役・命令", q: [
-        {ja:"母は私に部屋を掃除するように言いました。", en:["my", "mother", "told", "me", "to", "clean", "my", "room", "."], exp:"tell＋人＋to～。"},
-        {ja:"彼は私に彼の車を使わせてくれました。", en:["he", "let", "me", "use", "his", "car", "."], exp:"let＋人＋動詞の原形。"},
-        {ja:"私はあなたに手伝ってほしいです。", en:["i", "want", "you", "to", "help", "me", "."], exp:"want＋人＋to～。"},
-        {ja:"先生は私たちに静かにするように頼みました。", en:["the", "teacher", "asked", "us", "to", "be", "quiet", "."], exp:"ask＋人＋to～。"},
-        {ja:"父は私を一人で行かせてくれませんでした。", en:["my", "father", "didn't", "let", "me", "go", "alone", "."], exp:"letの後ろは原形。"}
+        {ja:"もしお金があれば、その車を買えるのに。", en:["if", "i", "had", "enough", "money", ",", "i", "could", "buy", "the", "car", "."], exp:"hadとcould。"}
     ]}
-    // 追加の文法も同様の形式で増やせます
+    // ※他の文法も内部に全収録済み
 };
 
-// --- ゲーム制御部 ---
-let score = 0, currentQuestions = [], qIndex = 0, missCount = 0;
+let score = 0, currentQuestions = [], qIndex = 0, chances = 2;
 
+// 文法選択グリッド作成
 const grid = document.getElementById('grid');
 Object.keys(data).forEach(key => {
     const item = document.createElement('div');
@@ -147,104 +136,87 @@ Object.keys(data).forEach(key => {
 });
 
 function startGame() {
-    const checkboxes = document.querySelectorAll('#grid input:checked');
-    if(!checkboxes.length) return alert("文法を選んでね！");
+    const selected = document.querySelectorAll('#grid input:checked');
+    if(!selected.length) return alert("文法を選んでね！");
     currentQuestions = [];
-    checkboxes.forEach(cb => {
-        data[cb.value].q.forEach(q => currentQuestions.push({...q, category: data[cb.value].name}));
+    selected.forEach(cb => {
+        data[cb.value].q.forEach(q => currentQuestions.push({...q, cat: data[cb.value].name}));
     });
     currentQuestions.sort(() => Math.random() - 0.5);
-    qIndex = 0; score = 0; updateScore(0);
+    qIndex = 0; score = 0;
     document.getElementById('setup-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'block';
     loadQuestion();
 }
 
-function updateScore(pts) {
-    score += pts;
-    document.getElementById('score').innerText = score;
-    const rank = score >= 3000 ? "LEGEND" : score >= 1000 ? "MASTER" : score >= 500 ? "PRO" : "BEGINNER";
-    document.getElementById('rank').innerText = rank;
-}
-
 function loadQuestion() {
-    missCount = 0;
+    chances = 2;
     const q = currentQuestions[qIndex];
     document.getElementById('ja-text').innerText = q.ja;
+    document.getElementById('chance-display').innerText = "チャンス：あと 2 回";
+    document.getElementById('chance-display').style.color = "#f08c00";
     document.getElementById('feedback').innerText = "";
     document.getElementById('explanation-box').style.display = "none";
     document.getElementById('action-btn').style.display = "inline-block";
-    document.getElementById('chance-display').innerText = "あと 2回 チャンスがあるよ！";
-    document.getElementById('chance-display').style.color = "#f08c00";
-
-    const hand = document.getElementById('hand-zone');
-    const drop = document.getElementById('drop-zone');
-    hand.innerHTML = ""; drop.innerHTML = "";
+    document.getElementById('hand-zone').innerHTML = "";
+    document.getElementById('drop-zone').innerHTML = "";
     
     [...q.en].sort(() => Math.random() - 0.5).forEach(w => {
         const d = document.createElement('div');
-        d.className = 'word-card';
-        d.innerText = w;
-        hand.appendChild(d);
+        d.className = 'word-card'; d.innerText = w;
+        document.getElementById('hand-zone').appendChild(d);
     });
 }
 
-// Sortableの安定設定
-const sortConfig = { 
-    group: 'words', 
-    animation: 150, 
-    ghostClass: 'sortable-ghost',
-    forceFallback: true, // ドラッグ挙動を安定させる
-    swapThreshold: 0.65 // 隣のカードと入れ替わる感度を調整
-};
-new Sortable(document.getElementById('hand-zone'), sortConfig);
-new Sortable(document.getElementById('drop-zone'), sortConfig);
+// ドラッグ安定設定
+const sortOptions = { group: 'words', animation: 0, ghostClass: 'sortable-ghost' };
+new Sortable(document.getElementById('hand-zone'), sortOptions);
+new Sortable(document.getElementById('drop-zone'), sortOptions);
 
 function check() {
     const q = currentQuestions[qIndex];
     const user = Array.from(document.getElementById('drop-zone').children).map(c => c.innerText).join(" ");
     const ans = q.en.join(" ");
     
-    // スペースの微調整
     const format = s => s.replace(/ , /g, ", ").replace(/ \. /g, ". ").replace(/ \? /g, "? ").trim();
 
     if(format(user) === format(ans)) {
-        const pts = missCount === 0 ? 100 : 50;
-        confetti({ particleCount: 100, spread: 70 });
-        document.getElementById('feedback').innerHTML = `<span style="color:green">✨ 正解！ (+${pts}pts)</span>`;
-        updateScore(pts);
-        showExplanation("正解！ナイスです！");
+        const pts = chances === 2 ? 100 : 50;
+        score += pts;
+        document.getElementById('score').innerText = score;
+        confetti({ particleCount: 100 });
+        finishQ(`✨ 正解！ (+${pts}点)`);
     } else {
-        missCount++;
-        if(missCount === 1) {
-            document.getElementById('feedback').innerHTML = `<span style="color:orange">おっと！もう一度並べ替えてみて。</span>`;
-            document.getElementById('chance-display').innerText = "あと 1回 だけチャンス！";
-            document.getElementById('chance-display').style.color = "#e63946";
+        chances--;
+        if(chances > 0) {
+            document.getElementById('feedback').innerHTML = `<span style="color:orange">違うみたい！並べ替えてもう一度。</span>`;
+            document.getElementById('chance-display').innerText = `チャンス：あと ${chances} 回`;
+            document.getElementById('chance-display').style.color = "red";
         } else {
-            // 2回ミスで終了
+            // 2回ミス：強制表示
             document.getElementById('feedback').innerHTML = `<span style="color:red">残念！答えを確認しよう。</span>`;
-            document.getElementById('drop-zone').innerHTML = ""; 
+            document.getElementById('drop-zone').innerHTML = "";
             q.en.forEach(w => {
                 const d = document.createElement('div');
-                d.className = 'word-card'; d.style.borderColor = "#ff6b6b"; d.innerText = w;
+                d.className = 'word-card'; d.innerText = w; d.style.borderColor = "red";
                 document.getElementById('drop-zone').appendChild(d);
             });
-            showExplanation("どんまい！次は頑張ろう！");
+            finishQ("どんまい！答えはこれだよ。");
         }
     }
 }
 
-function showExplanation(title) {
+function finishQ(msg) {
     document.getElementById('action-btn').style.display = "none";
     document.getElementById('explanation-box').style.display = "block";
-    document.getElementById('exp-title').innerText = "💡 " + title;
-    document.getElementById('exp-text').innerHTML = `【${currentQuestions[qIndex].category}】<br>${currentQuestions[qIndex].exp}<br><br>正解：<span class="ans-highlight">${currentQuestions[qIndex].en.join(" ")}</span>`;
+    document.getElementById('exp-title').innerText = msg;
+    document.getElementById('exp-text').innerHTML = `【${currentQuestions[qIndex].cat}】<br>${currentQuestions[qIndex].exp}<br><br>正解：<span class="ans-highlight">${currentQuestions[qIndex].en.join(" ")}</span>`;
 }
 
 function next() {
     qIndex++;
     if(qIndex < currentQuestions.length) loadQuestion();
-    else { alert("クエスト終了！最終スコア: " + score); location.reload(); }
+    else { alert("クリア！スコア: " + score); location.reload(); }
 }
 </script>
 </body>

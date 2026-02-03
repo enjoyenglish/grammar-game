@@ -9,34 +9,14 @@
         :root { --primary: #ff6b6b; --secondary: #4ecdc4; --bg: #f0f7f7; --accent: #ffe66d; }
         body { font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         .container { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 0 #cbdadb; width: 95%; max-width: 700px; text-align: center; }
-        
-        /* 組み立てエリア */
-        .drop-zone {
-            min-height: 100px; margin: 10px 0; padding: 15px;
-            background: #fff; border: 3px solid var(--secondary); border-radius: 15px;
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
-            position: relative;
-        }
+        .drop-zone { min-height: 100px; margin: 10px 0; padding: 15px; background: #fff; border: 3px solid var(--secondary); border-radius: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; position: relative; }
         .drop-zone:empty::before { content: "ここにカードを並べてね"; color: #ccc; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
-
-        /* 手札エリア */
-        .hand-zone {
-            min-height: 100px; margin: 10px 0; padding: 15px;
-            background: #e9ecef; border-radius: 15px;
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
-        }
-
-        .word-card {
-            background: var(--accent); padding: 10px 18px; border-radius: 10px;
-            cursor: grab; font-weight: bold; font-size: 1.1rem;
-            box-shadow: 0 4px 0 #d4c05d;
-        }
-
+        .hand-zone { min-height: 100px; margin: 10px 0; padding: 15px; background: #e9ecef; border-radius: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .word-card { background: var(--accent); padding: 10px 18px; border-radius: 10px; cursor: grab; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 0 #d4c05d; }
         .grammar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 15px 0; }
         .grammar-grid label { padding: 10px; background: #eee; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
         .grammar-grid input { display: none; }
         .grammar-grid label:has(input:checked) { background: var(--secondary); color: white; box-shadow: 0 4px 0 #3baea5; }
-        
         .btn { padding: 15px 40px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; background: var(--primary); color: white; box-shadow: 0 5px 0 #c44; font-weight: bold; margin-top: 10px; }
         #game-screen { display: none; }
         .notice { font-size: 0.85rem; color: #d00; font-weight: bold; background: #fff0f0; padding: 5px; border-radius: 5px; margin-bottom: 10px; }
@@ -44,14 +24,12 @@
     </style>
 </head>
 <body>
-
 <div id="setup-screen" class="container">
     <h1>⚔️ 文法構築クエスト</h1>
     <p>挑戦するカテゴリーを選んでね</p>
     <div class="grammar-grid" id="grid"></div>
     <button class="btn" onclick="startGame()">冒険開始！</button>
 </div>
-
 <div id="game-screen" class="container">
     <div class="notice">※文頭に来る語も小文字になっています</div>
     <div style="display: flex; justify-content: space-between;">
@@ -59,17 +37,13 @@
         <div id="q-count"></div>
     </div>
     <p id="ja-text" style="font-size: 1.3rem; font-weight: bold; margin: 15px 0;"></p>
-    
     <div class="msg">【組み立てスペース】</div>
     <div id="drop-zone" class="drop-zone"></div>
-    
     <div class="msg">【自分のカード】</div>
     <div id="hand-zone" class="hand-zone"></div>
-    
     <button class="btn" onclick="check()">判定！</button>
     <div id="feedback" style="margin-top:15px; font-weight:bold;"></div>
 </div>
-
 <script>
 const data = {
     passive: { name: "受け身", q: [
@@ -150,15 +124,11 @@ const data = {
         {ja:"父は私を一人で行かせてくれませんでした。", en:["my", "father", "didn't", "let", "me", "go", "alone."]}
     ]}
 };
-
-// セットアップ
 const grid = document.getElementById('grid');
 Object.keys(data).forEach(key => {
     grid.innerHTML += `<label><input type="checkbox" value="${key}"> <span>${data[key].name}</span></label>`;
 });
-
 let currentQ = [], qIndex = 0, score = 0;
-
 function startGame() {
     const selected = Array.from(document.querySelectorAll('input:checked')).map(i => i.value);
     if(!selected.length) return alert("文法を選んでね！");
@@ -170,7 +140,6 @@ function startGame() {
     document.getElementById('game-screen').style.display = 'block';
     next();
 }
-
 function next() {
     if(qIndex >= currentQ.length) {
         alert("全問クリア！スコア: " + score);
@@ -181,22 +150,18 @@ function next() {
     document.getElementById('ja-text').innerText = q.ja;
     document.getElementById('q-count').innerText = (qIndex+1) + " / " + currentQ.length;
     document.getElementById('feedback').innerText = "";
-    
     const hand = document.getElementById('hand-zone');
     const drop = document.getElementById('drop-zone');
     hand.innerHTML = ""; drop.innerHTML = "";
-    
     [...q.en].sort(() => Math.random()-0.5).forEach(w => {
         const d = document.createElement('div');
         d.className = 'word-card'; d.innerText = w;
         hand.appendChild(d);
     });
 }
-
 const sortOptions = { group: 'words', animation: 150 };
 new Sortable(document.getElementById('hand-zone'), sortOptions);
 new Sortable(document.getElementById('drop-zone'), sortOptions);
-
 function check() {
     const user = Array.from(document.getElementById('drop-zone').children).map(c => c.innerText.toLowerCase()).join(" ");
     const ans = currentQ[qIndex].en.map(w => w.toLowerCase()).join(" ");
